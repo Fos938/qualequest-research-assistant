@@ -237,7 +237,10 @@ st.markdown("""
 # Initialize client
 @st.cache_resource
 def get_client():
-    client = InferenceClient(model="google/gemma-2b-it")
+    client = InferenceClient(
+        model="google/gemma-2b-it", 
+        token=st.secrets["HUGGINGFACE_API_KEY"]
+    )
     return client
 
 client = get_client()
@@ -344,7 +347,7 @@ for msg in current_messages:
 if st.session_state.typing:
     st.markdown(f"""
     <div class="message assistant-message">
-        <div class="avatar assistant-avatar">🔍</div>
+        <div class="avatar assistant-avatar">🤖</div>
         <div class="message-content">
             <div class="typing-indicator">
                 <div class="typing-dot typing-dot-1"></div>
@@ -359,36 +362,14 @@ st.markdown('</div>', unsafe_allow_html=True)
 
 # Input area
 st.markdown('<div class="input-container">', unsafe_allow_html=True)
-cols = st.columns([8, 1])
-with cols[0]:
+col1, col2, col3 = st.columns([7, 1, 1])
+with col1:
     user_input = st.text_input("", placeholder="Ask your research question...", label_visibility="collapsed", key="user_input")
-with cols[1]:
+with col2:
     send_button = st.button("📤", key="send")
-st.markdown('</div>', unsafe_allow_html=True)
-
-# Helper function to generate system prompt
-def generate_prompt(history, new_question):
-    prompt = """You are Quale Quest's Research Assistant, a helpful AI that provides accurate, detailed information. 
-    Answer questions clearly and professionally, citing sources when possible."""
-    
-    # Format conversation history
-    formatted_history = ""
-    for msg in history[-6:]:  # Include up to 6 most recent messages
-        formatted_history += f"{msg['role'].title()}: {msg['content']}\n"
-    
-    # Add the new question
-    final_prompt = f"{prompt}\n\n{formatted_history}\nUser: {new_question}\nAssistant:"
-    
-    return final_prompt
-
-# Add "New Chat" button next to the send button
-cols = st.columns([7, 1, 1])
-with cols[0]:
-    user_input = st.text_input("", placeholder="Ask your research question...", label_visibility="collapsed", key="user_input")
-with cols[1]:
-    send_button = st.button("📤", key="send")
-with cols[2]:
+with col3:
     new_chat_button = st.button("🆕", key="new_chat", help="Start a new chat")
+st.markdown('</div>', unsafe_allow_html=True)
 
 # Handle new chat button
 if new_chat_button:
@@ -412,6 +393,21 @@ if st.session_state.typing:
     
     # Generate response
     try:
+        # Helper function to generate system prompt
+        def generate_prompt(history, new_question):
+            prompt = """You are Quale Quest's Research Assistant, a helpful AI that provides accurate, detailed information. 
+            Answer questions clearly and professionally, citing sources when possible."""
+            
+            # Format conversation history
+            formatted_history = ""
+            for msg in history[-6:]:  # Include up to 6 most recent messages
+                formatted_history += f"{msg['role'].title()}: {msg['content']}\n"
+            
+            # Add the new question
+            final_prompt = f"{prompt}\n\n{formatted_history}\nUser: {new_question}\nAssistant:"
+            
+            return final_prompt
+            
         prompt = generate_prompt(
             current_messages[:-1], 
             current_messages[-1]["content"]
